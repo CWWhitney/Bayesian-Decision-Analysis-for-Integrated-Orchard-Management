@@ -1,0 +1,378 @@
+---
+title: "Bayesian Decision Analysis for Integrated Orchard Management"
+author: "Cory Whitney"
+date: "2025-09-27"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+urlcolor: blue
+linkcolor: blue
+citecolor: blue
+---
+
+```{r knitr_opts, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dev = "png",
+  dpi = 96  # Lower dpi for smaller file sizes on GitHub
+)
+```
+
+# Bayesian Decision Analysis for Integrated Orchard Management
+
+## Background
+
+You are considering introducing sheep into your apple orchard, a practice known as "agroforestry" or "integrated farming." This approach promises multiple benefits but also carries significant uncertainties. The decision involves complex trade-offs between costs, benefits, and risks that are difficult to quantify with traditional analysis.
+
+## The Decision Context
+
+### Current Situation
+
+- **Apple orchard**: Established operation with known annual revenues
+- **Opportunity**: Introduce sheep for wool/meat production while benefiting orchard health
+- **Challenge**: Multiple uncertain factors make traditional cost-benefit analysis inadequate
+
+### Key Uncertain Variables
+
+#### Costs (Annual)
+
+- **Initial investment**: Fencing, watering systems, sheep purchase
+- **Operating costs**: Feed supplements, veterinary care, labor
+- **Potential losses**: Sheep damage to trees, increased management complexity
+
+#### Benefits 
+
+- **Direct revenue**: Wool, meat, lamb sales
+- **Orchard benefits**: Natural fertilization, weed control, reduced mowing costs
+- **Ecosystem services**: Improved soil health, biodiversity enhancement
+
+#### Risks
+
+- **Animal health risks**: Disease outbreaks, predation losses
+- **Market risks**: Fluctuating wool/meat prices
+- **Orchard risks**: Tree damage, soil compaction, regulatory changes
+
+## The Analytical Challenge
+
+### Problem 1: Parameter Uncertainty
+
+You have initial estimates with 90% confidence intervals, but these ranges are wide:
+
+- Costs: \$5,000 - \$15,000 annually
+- Benefits: \$8,000 - \$20,000 annually  
+- Failure probability: 10% - 30%
+
+### Problem 2: Incorporating New Information
+
+You've gathered observational data from another farm, but:
+
+- Their operation isn't identical to yours
+- Their results may not directly translate to your context
+- You want to use this information without over-relying on it
+
+### Problem 3: Decision Complexity
+
+The decision requires answering:
+
+1. What is the **expected net benefit**?
+2. What is the **probability of positive returns**?
+3. What are the **potential downside risks**?
+4. How **robust** is the decision to changing assumptions?
+
+## Bayesian Monte Carlo Approach
+
+### Why Bayesian Methods?
+
+- **Incorporate prior knowledge**: Your expert judgment about reasonable ranges
+- **Update with new evidence**: Observations from other farms inform but don't dominate
+- **Quantify uncertainty**: Results include probability distributions, not just point estimates
+
+### Why Monte Carlo Simulation?
+
+- **Propagate uncertainty**: Track how input uncertainties affect output uncertainty
+- **Scenario analysis**: Explore thousands of possible futures
+- **Risk assessment**: Quantify probabilities of different outcomes
+
+## Research Questions
+
+This analysis addresses:
+
+1. **Decision Support**: Should you introduce sheep given current information?
+2. **Value of Information**: How much would perfect information about key parameters be worth?
+3. **Sensitivity Analysis**: Which parameters most strongly influence the decision?
+4. **Risk Management**: What are the potential downside scenarios and their probabilities?
+
+## Expected Outcomes
+
+The analysis will provide:
+
+- Probability distribution of net annual benefits
+- Probability of economic success/failure
+- Identification of key risk drivers
+- Guidance on whether to proceed, and under what conditions
+
+## Practical Significance
+
+This approach demonstrates how farmers can make better decisions under uncertainty by:
+
+- Systematically incorporating different types of information
+- Quantifying risks rather than ignoring them
+- Making transparent, defensible decisions
+- Planning for multiple possible futures
+
+The methodology is transferable to other agricultural decisions involving:
+
+- New technology adoption
+- Crop diversification  
+- Sustainable practice implementation
+- Climate adaptation strategies
+
+We provide a simple R script that demonstrates how to use Monte Carlo simulation with Bayesian updating for farm decision:
+
+## Simple Bayesian Monte Carlo for Farm Decision Analysis
+ 
+Introducing sheep in apple orchard
+
+```{r set.seed}
+
+set.seed(123) # For reproducible results
+```
+
+## Define prior distributions (90% confidence intervals)
+ 
+Using normal distributions for simplicity 
+
+```{r calculate_prior}
+
+# Prior parameters (mean and sd based on 90% CI)
+# Assuming 90% CI is mean ± 1.645*sd
+calculate_prior <- function(lower, upper) {
+  mean_val <- (lower + upper) / 2
+  sd_val <- (upper - lower) / (2 * 1.645) # 1.645 for 90% CI
+  return(list(mean = mean_val, sd = sd_val))
+}
+```
+
+## Prior distributions for costs, benefits, and risks
+
+```{r cost_prior}
+cost_prior <- calculate_prior(lower = 5000, upper = 15000)    # Annual costs ($)
+benefit_prior <- calculate_prior(lower = 8000, upper = 20000) # Annual benefits ($)
+risk_prior <- calculate_prior(lower = 0.1, upper = 0.3)       # Probability of failure
+```
+
+## New observations from other farm
+
+```{r observations}
+observations <- list(
+  wool_price_obs = 12.5,    # $/kg observed wool price
+  fertility_gain_obs = 0.15, # Observed fertility improvement
+  risk_obs = 0.18           # Observed failure rate
+)
+
+```
+
+## Bayesian updating function
+
+```{r bayesian_update}
+
+bayesian_update <- function(prior_mean, prior_sd, observed_value, obs_sd = 0.1) {
+  # Simple conjugate prior update for normal distribution
+  prior_precision <- 1 / (prior_sd^2)
+  obs_precision <- 1 / (obs_sd^2)
+  
+  posterior_mean <- (prior_precision * prior_mean + obs_precision * observed_value) / 
+                    (prior_precision + obs_precision)
+  posterior_sd <- sqrt(1 / (prior_precision + obs_precision))
+  
+  return(list(mean = posterior_mean, sd = posterior_sd))
+}
+```
+
+
+## Update priors with observations (with some uncertainty in observations)
+
+```{r cost_posterior}
+cost_posterior <- bayesian_update(cost_prior$mean, cost_prior$sd, 
+                                 observations$wool_price_obs * 400) # Convert to annual cost
+benefit_posterior <- bayesian_update(benefit_prior$mean, benefit_prior$sd,
+                                    observations$fertility_gain_obs * 100000) # Convert to monetary value
+risk_posterior <- bayesian_update(risk_prior$mean, risk_prior$sd,
+                                 observations$risk_obs)
+
+```
+
+## Monte Carlo simulation
+
+```{r mcsimulation_simple}
+
+n_simulations <- 10000
+
+# Sample from posterior distributions
+costs_sim <- rnorm(n_simulations, cost_posterior$mean, cost_posterior$sd)
+benefits_sim <- rnorm(n_simulations, benefit_posterior$mean, benefit_posterior$sd)
+risks_sim <- rnorm(n_simulations, risk_posterior$mean, risk_posterior$sd)
+
+# Ensure risks are between 0 and 1
+risks_sim <- pmax(0, pmin(1, risks_sim))
+
+# Calculate net benefits (accounting for risk)
+net_benefits <- (benefits_sim - costs_sim) * (1 - risks_sim)
+
+# Decision analysis results
+results <- list(
+  expected_net_benefit = mean(net_benefits),
+  probability_positive = mean(net_benefits > 0),
+  confidence_interval = quantile(net_benefits, c(0.05, 0.95)),
+  risk_exposure = mean(net_benefits < -5000) # Probability of significant loss
+)
+```
+
+## Results
+
+```{r print_results, include=FALSE}
+
+# Print results
+cat("=== BAYESIAN MONTE CARLO FARM DECISION ANALYSIS ===\n\n")
+cat("Prior Distributions:\n")
+cat(sprintf("Costs: $%.0f ± $%.0f\n", cost_prior$mean, cost_prior$sd))
+cat(sprintf("Benefits: $%.0f ± $%.0f\n", benefit_prior$mean, benefit_prior$sd))
+cat(sprintf("Risks: %.1f%% ± %.1f%%\n", risk_prior$mean*100, risk_prior$sd*100))
+
+cat("\nPosterior Distributions (after incorporating observations):\n")
+cat(sprintf("Costs: $%.0f ± $%.0f\n", cost_posterior$mean, cost_posterior$sd))
+cat(sprintf("Benefits: $%.0f ± $%.0f\n", benefit_posterior$mean, benefit_posterior$sd))
+cat(sprintf("Risks: %.1f%% ± %.1f%%\n", risk_posterior$mean*100, risk_posterior$sd*100))
+
+cat("\nDecision Results:\n")
+cat(sprintf("Expected Net Annual Benefit: $%.0f\n", results$expected_net_benefit))
+cat(sprintf("Probability of Positive Return: %.1f%%\n", results$probability_positive*100))
+cat(sprintf("90%% Confidence Interval: [$%.0f, $%.0f]\n", 
+            results$confidence_interval[1], results$confidence_interval[2]))
+cat(sprintf("Probability of >$5000 Loss: %.1f%%\n", results$risk_exposure*100))
+```
+
+## Plot results
+
+```{r plot_results}
+# Load required packages
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)  # For combining plots
+
+# Create data frames for plotting
+net_benefits_df <- data.frame(net_benefits = net_benefits)
+costs_df <- data.frame(
+    value = costs_sim,
+    type = "Posterior"
+)
+benefits_df <- data.frame(
+    value = benefits_sim,
+    type = "Posterior"
+)
+risks_df <- data.frame(
+    value = risks_sim,
+    type = "Posterior"
+)
+
+# Add prior distributions for comparison
+set.seed(123)
+n_prior <- 10000
+costs_df_prior <- data.frame(
+    value = rnorm(n_prior, cost_prior$mean, cost_prior$sd),
+    type = "Prior"
+)
+benefits_df_prior <- data.frame(
+    value = rnorm(n_prior, benefit_prior$mean, benefit_prior$sd),
+    type = "Prior"
+)
+risks_df_prior <- data.frame(
+    value = pmin(1, pmax(0, rnorm(n_prior, risk_prior$mean, risk_prior$sd))),
+    type = "Prior"
+)
+
+# Combine prior and posterior
+costs_combined <- rbind(costs_df, costs_df_prior)
+benefits_combined <- rbind(benefits_df, benefits_df_prior)
+risks_combined <- rbind(risks_df, risks_df_prior)
+
+```
+
+### Plot 1: Net Benefits Distribution
+
+```{r p1_net_benefits}
+p1_net_benefits <- ggplot(net_benefits_df, aes(x = net_benefits)) +
+    geom_density(fill = "lightblue", alpha = 0.7, color = "blue") +
+    geom_vline(xintercept = 0, color = "red", linetype = "dashed", size = 1) +
+    geom_vline(xintercept = mean(net_benefits), color = "darkblue", size = 1) +
+    labs(title = "Distribution of Net Annual Benefits",
+         x = "Net Annual Benefit ($)",
+         y = "Density") +
+    theme_minimal() +
+    annotate("text", x = mean(net_benefits), y = 0, 
+             label = paste("Mean: $", round(mean(net_benefits)), sep = ""),
+             vjust = -1, color = "darkblue")
+
+p1_net_benefits
+```
+
+### Plot 2: Costs - Prior vs Posterior
+
+```{r p2_costs_combined}
+p2_costs_combined <- ggplot(costs_combined, aes(x = value, fill = type)) +
+    geom_density(alpha = 0.6) +
+    labs(title = "Cost Distribution: Prior vs Posterior",
+         x = "Annual Costs ($)",
+         y = "Density",
+         fill = "Distribution") +
+    scale_fill_manual(values = c("Prior" = "red", "Posterior" = "darkred")) +
+    theme_minimal() +
+    theme(legend.position = "top")
+
+p2_costs_combined
+```
+
+### Plot 3: Benefits - Prior vs Posterior
+
+```{r p3_benefits_combined}
+p3_benefits_combined <- ggplot(benefits_combined, aes(x = value, fill = type)) +
+    geom_density(alpha = 0.6) +
+    labs(title = "Benefit Distribution: Prior vs Posterior",
+         x = "Annual Benefits ($)",
+         y = "Density",
+         fill = "Distribution") +
+    scale_fill_manual(values = c("Prior" = "green", "Posterior" = "darkgreen")) +
+    theme_minimal() +
+    theme(legend.position = "top")
+p3_benefits_combined
+```
+
+### Plot 4: Risks - Prior vs Posterior
+
+```{r p4_risks_combined}
+p4_risks_combined <- ggplot(risks_combined, aes(x = value, fill = type)) +
+    geom_density(alpha = 0.6) +
+    labs(title = "Risk Distribution: Prior vs Posterior",
+         x = "Failure Probability",
+         y = "Density",
+         fill = "Distribution") +
+    scale_fill_manual(values = c("Prior" = "orange", "Posterior" = "darkorange")) +
+    theme_minimal() +
+    theme(legend.position = "top")
+p4_risks_combined
+```
+
+### Combined plots
+
+```{r combined_plots}
+(p1_net_benefits) / (p2_costs_combined + p3_benefits_combined) / (p4_risks_combined) +
+    plot_annotation(title = "Bayesian Monte Carlo Analysis: Sheep in Apple Orchard",
+                   theme = theme(plot.title = element_text(hjust = 0.5, size = 16)))
+```
+

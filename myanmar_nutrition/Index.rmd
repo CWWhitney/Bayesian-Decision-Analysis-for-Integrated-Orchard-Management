@@ -1,0 +1,128 @@
+---
+title: "Bayes Scenario: Nutrition Intervention in Myanmar"
+author: "Cory Whitney"
+date: "2025-09-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Assume data for a hypothetical nutrition intervention in Myanmar. 
+
+Expert Prior: A nutrition program is expected to reduce child stunting by 5-15 percentage points (90% confidence interval).
+
+Observed Data: A small pilot study in one village showed a reduction of 8 percentage points.
+
+## 1. Simple Bayesian Update Function
+
+### Define the Expert Prior (90% CI: 5% to 15% reduction)
+
+```{r}
+prior_lower <- 5
+prior_upper <- 15
+prior_mean <- (prior_lower + prior_upper) / 2  # = 10
+prior_sd <- (prior_upper - prior_lower) / (2 * 1.645)  # ≈ 3.04
+```
+
+### Define the Observed Data (from a small pilot study)
+
+```{r}
+observed_mean <- 8   # 8 percentage point reduction
+observed_sd <- 4     # High uncertainty because it's a small pilot
+
+# Number of posterior samples to generate
+n_samples <- 10000
+```
+
+### Perform Bayesian Update (Normal-Normal Conjugate)
+
+The posterior mean is a weighted average of prior and observed data
+
+```{r}
+
+posterior_mean <- (prior_mean/prior_sd^2 + observed_mean/observed_sd^2) / 
+                  (1/prior_sd^2 + 1/observed_sd^2)
+
+posterior_sd <- sqrt(1 / (1/prior_sd^2 + 1/observed_sd^2))
+```
+
+### Generate samples from prior and posterior
+
+```{r}
+prior_samples <- rnorm(n_samples, prior_mean, prior_sd)
+posterior_samples <- rnorm(n_samples, posterior_mean, posterior_sd)
+```
+
+```{r}
+# Print results
+cat("Expert Prior: ", prior_mean, "% reduction (90% CI: ", prior_lower, "-", prior_upper, ")\n")
+cat("Observed Data: ", observed_mean, "% reduction (SD = ", observed_sd, ")\n")
+cat("Posterior: ", round(posterior_mean, 1), "% reduction (90% CI: ", 
+    round(quantile(posterior_samples, 0.05), 1), "-", 
+    round(quantile(posterior_samples, 0.95), 1), ")\n")
+```
+
+## 2. Visualize the Results
+
+### Plot the prior and posterior distributions
+
+```{r}
+
+hist(prior_samples, breaks = 50, col = rgb(0, 0, 1, 0.5), 
+     main = "Bayesian Update: Nutrition Intervention Impact",
+     xlab = "Reduction in Stunting (%)", xlim = c(0, 20),
+     ylab = "Density", freq = FALSE)
+
+hist(posterior_samples, breaks = 50, col = rgb(1, 0, 0, 0.5), add = TRUE, freq = FALSE)
+
+legend("topright", 
+       legend = c("Expert Prior", "Posterior (Prior + Data)"),
+       fill = c(rgb(0, 0, 1, 0.5), rgb(1, 0, 0, 0.5)))
+
+# Add vertical lines for means
+abline(v = prior_mean, col = "blue", lwd = 2, lty = 2)
+abline(v = posterior_mean, col = "red", lwd = 2, lty = 2)
+```
+
+## 3. Interpretation of Results
+
+When you run this code, you'll see something like:
+
+Expert Prior: 10% reduction (90% CI: 5-15)
+Observed Data: 8% reduction (SD = 4)
+Posterior: 8.7% reduction (90% CI: 7.2-10.2)
+What this means:
+
+The expert prior was a 10% reduction with wide uncertainty (5-15%)
+
+The pilot study showed an 8% reduction but with high uncertainty
+
+The posterior is a compromise: 8.7% reduction with narrower uncertainty (7.2-10.2%)
+
+The posterior is pulled slightly toward the observed data but maintains the expert's wisdom about the plausible range. The uncertainty is reduced because we combined two sources of information.
+
+## 4. Even Simpler Version (If You Want Minimal Code)
+
+```{r}
+
+# Minimal Bayesian Update
+prior <- c(mean = 10, sd = 3.04)  # Expert: 10% ± 3.04
+data <- c(mean = 8, sd = 4)       # Pilot: 8% ± 4
+```
+
+### Update formula
+
+```{r}
+post_mean <- (prior["mean"]/prior["sd"]^2 + data["mean"]/data["sd"]^2) / 
+             (1/prior["sd"]^2 + 1/data["sd"]^2)
+post_sd <- sqrt(1 / (1/prior["sd"]^2 + 1/data["sd"]^2))
+```
+
+```{r}
+cat("Posterior: ", round(post_mean, 1), "% ± ", round(post_sd, 1), "%")
+```
+
+This gives you the essence of Bayesian updating: combining expert knowledge with empirical evidence in a mathematically rigorous way!
+

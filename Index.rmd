@@ -61,7 +61,7 @@ You are considering introducing sheep into your apple orchard, a practice known 
 
 ### Problem 1: Parameter Uncertainty
 
-You have initial estimates with 90% confidence intervals, but these ranges are wide:
+We have initial estimates with 90% confidence intervals, but these ranges are wide:
 
 - Costs: \$5,000 - \$15,000 annually
 - Benefits: \$8,000 - \$20,000 annually  
@@ -69,11 +69,11 @@ You have initial estimates with 90% confidence intervals, but these ranges are w
 
 ### Problem 2: Incorporating New Information
 
-You've gathered observational data from another farm, but:
+We've gathered observational data from another farm, but:
 
-- Their operation isn't identical to yours
-- Their results may not directly translate to your context
-- You want to use this information without over-relying on it
+- Their operation isn't identical to ours
+- Their results may not directly translate to our context
+- We want to use this information without over-relying on it
 
 ### Problem 3: Decision Complexity
 
@@ -88,7 +88,7 @@ The decision requires answering:
 
 ### Why Bayesian Methods?
 
-- **Incorporate prior knowledge**: Your expert judgment about reasonable ranges
+- **Incorporate prior knowledge**: Expert judgment about reasonable ranges
 - **Update with new evidence**: Observations from other farms inform but don't dominate
 - **Quantify uncertainty**: Results include probability distributions, not just point estimates
 
@@ -102,7 +102,7 @@ The decision requires answering:
 
 This analysis addresses:
 
-1. **Decision Support**: Should you introduce sheep given current information?
+1. **Decision Support**: Should we introduce sheep given current information?
 2. **Value of Information**: How much would perfect information about key parameters be worth?
 3. **Sensitivity Analysis**: Which parameters most strongly influence the decision?
 4. **Risk Management**: What are the potential downside scenarios and their probabilities?
